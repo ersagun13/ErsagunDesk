@@ -1,0 +1,154 @@
+<UserControl x:Class="ErsagunDesk.Widgets.TelemetryWidget"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:ErsagunDesk.Converters"
+             Margin="0,0,0,10"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <converters:IconKeyToGeometryConverter x:Key="IconConverter" />
+        <converters:KeyToBrushConverter x:Key="BrushConverter" />
+
+        <DataTemplate x:Key="TelemetryRowTemplate">
+            <Border Background="Transparent" CornerRadius="4" Padding="4,2.5" Margin="0,1" BorderThickness="1" BorderBrush="Transparent">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAlert}" Value="True">
+                                <Setter Property="Background" Value="#1AF87171" />
+                                <Setter Property="BorderBrush" Value="#40F87171" />
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#10FFFFFF" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Icon -->
+                    <Path Grid.Column="0"
+                          Data="{Binding IconKey, Converter={StaticResource IconConverter}}"
+                          Fill="{StaticResource TextMutedBrush}"
+                          Stretch="Uniform"
+                          Width="11"
+                          Height="11"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Left" />
+
+                    <!-- Label & Details -->
+                    <DockPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="{Binding SubText}"
+                                   DockPanel.Dock="Right"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="6,0,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Label}"
+                                   FontSize="11.5"
+                                   FontWeight="Medium"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+
+                    <!-- Inline Gauge + Sparkline + Value -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <!-- Status Badge (e.g. Ping "Harika" / "İyi") -->
+                        <Border x:Name="BdStatusBadge"
+                                CornerRadius="3"
+                                Padding="4,1"
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                Background="#18FFFFFF"
+                                Visibility="Collapsed">
+                            <TextBlock Text="{Binding StatusBadge}"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding StatusBadgeBrush, Converter={StaticResource BrushConverter}}" />
+                        </Border>
+
+                        <!-- Sparkline Mini Chart (For CPU / GPU when available) -->
+                        <Border x:Name="BdSparkline"
+                                Width="44" Height="14"
+                                Background="#10FFFFFF"
+                                BorderBrush="{StaticResource MasterHudBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                Visibility="Collapsed">
+                            <Polyline Points="{Binding SparklinePoints}"
+                                      Stroke="{Binding BarColorKey, Converter={StaticResource BrushConverter}}"
+                                      StrokeThickness="1.2"
+                                      StrokeLineJoin="Round"
+                                      Stretch="Fill"
+                                      Margin="1" />
+                        </Border>
+
+                        <!-- Standard Progress Bar (When no sparkline) -->
+                        <Grid x:Name="GridProgressBar" Width="34" Height="3" VerticalAlignment="Center" Margin="0,0,6,0">
+                            <Border Background="{StaticResource TrackBgBrush}" CornerRadius="1.5" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding Percentage, StringFormat='{}{0}*'}" />
+                                    <ColumnDefinition Width="{Binding RemainingPercentage, StringFormat='{}{0}*'}" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0"
+                                        Background="{Binding BarColorKey, Converter={StaticResource BrushConverter}}"
+                                        CornerRadius="1.5" />
+                            </Grid>
+                        </Grid>
+
+                        <TextBlock Text="{Binding MainText}"
+                                   Width="46"
+                                   TextAlignment="Right"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="{Binding BarColorKey, Converter={StaticResource BrushConverter}}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasSparkline}" Value="True">
+                    <Setter TargetName="BdSparkline" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="GridProgressBar" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasStatusBadge}" Value="True">
+                    <Setter TargetName="BdStatusBadge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <Grid Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown" Margin="4,0,4,6">
+            <TextBlock x:Name="TxtTelemetryTitle"
+                       Text="Telemetri"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       VerticalAlignment="Center" />
+            <Path x:Name="ArrowIcon"
+                  Data="{StaticResource GeoCollapse}"
+                  Fill="{StaticResource TextMutedBrush}"
+                  Stretch="Uniform"
+                  Width="8" Height="8"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center" />
+        </Grid>
+        <StackPanel x:Name="ContentPanel">
+            <ItemsControl ItemsSource="{Binding Telemetry.Performance}"
+                          ItemTemplate="{StaticResource TelemetryRowTemplate}" />
+            <ItemsControl ItemsSource="{Binding Telemetry.Storage}"
+                          ItemTemplate="{StaticResource TelemetryRowTemplate}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

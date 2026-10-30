@@ -1,0 +1,222 @@
+<Window x:Class="ErsagunDesk.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:ErsagunDesk.Converters"
+        xmlns:widgets="clr-namespace:ErsagunDesk.Widgets"
+        Title="ErsagunDesk"
+        Width="360"
+        SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="False"
+        FontFamily="Roboto, Segoe UI Variable Text, Segoe UI, sans-serif"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
+        Loaded="Window_Loaded"
+        ContentRendered="Window_ContentRendered"
+        Deactivated="Window_Deactivated">
+
+    <Window.Resources>
+        <converters:IconKeyToGeometryConverter x:Key="IconConverter" />
+        <converters:KeyToBrushConverter x:Key="BrushConverter" />
+        <converters:StringToVisibilityConverter x:Key="StringToVis" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Window.ContextMenu>
+        <ContextMenu x:Name="MainContextMenu"
+                     Style="{StaticResource ModernContextMenuStyle}"
+                     StaysOpen="False"
+                     Opened="MainContextMenu_Opened"
+                     Closed="MainContextMenu_Closed">
+            <MenuItem x:Name="MenuHeader" Header="Saat &amp; Sistem Durumu" IsCheckable="True" Click="MenuHeader_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoPerformance}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuWeather" Header="Hava Durumu Detayları" IsCheckable="True" Click="MenuWeather_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoWeather}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuClipboard" Header="Pano Geçmişi" IsCheckable="True" Click="MenuClipboard_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoClipboard}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuTelemetry" Header="Sistem Telemetrisi" IsCheckable="True" Click="MenuTelemetry_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoPerformance}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuFinance" Header="Canlı Piyasa &amp; Kripto" IsCheckable="True" Click="MenuFinance_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoDollar}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuMedia" Header="Medya Oynatıcı" IsCheckable="True" Click="MenuMedia_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoMusic}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuHardware" Header="Donanım Bileşenleri" IsCheckable="True" Click="MenuHardware_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoMonitor}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuQuickActions" Header="Hızlı Araçlar" IsCheckable="True" Click="MenuQuickActions_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoBolt}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem x:Name="MenuCompactMode" Header="Kompakt HUD Modu" IsCheckable="True" Click="MenuCompactMode_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoExpand}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuLockPosition" Header="Konumu Kilitle" IsCheckable="True" Click="MenuLockPosition_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoLock}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuPinToDesktop" Header="Masaüstüne Sabitle (En Arkada)" IsCheckable="True" Click="MenuPinToDesktop_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoDesktop}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuAlwaysOnTop" Header="Her Zaman Üstte" IsCheckable="True" Click="MenuAlwaysOnTop_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoPin}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuGameMode" Header="Oyun Modu (Otomatik Rölanti)" IsCheckable="True" Click="MenuGameMode_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoGamepad}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuAutoStart" Header="Windows ile Birlikte Başlat" IsCheckable="True" Click="MenuAutoStart_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoRocket}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem x:Name="MenuSettings" Header="Ayarlar" Click="MenuSettings_Click" FontWeight="SemiBold">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoSettings}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuRefresh" Header="Yenile" Click="MenuRefresh_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoRefresh}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuResetPos" Header="Konumu Varsayılana Sıfırla" Click="MenuResetPosition_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoReset}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="MenuPrices" Header="Fiyatlar (config.json)" Click="MenuEditPrices_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoDollar}" Fill="{StaticResource TextSecondaryBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem x:Name="MenuExit" Header="Kapat" Click="MenuExit_Click">
+                <MenuItem.Icon>
+                    <Path Data="{StaticResource GeoClose}" Fill="{StaticResource AccentRedBrush}" Stretch="Uniform" Width="13" Height="13" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </Window.ContextMenu>
+
+    <!-- Frosted Acrylic Master Surface -->
+    <Border x:Name="MasterBorder"
+            Background="{StaticResource MasterHudBgBrush}"
+            BorderBrush="{StaticResource MasterHudBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="14"
+            Padding="14,12"
+            Cursor="SizeAll"
+            MouseLeftButtonDown="MasterBorder_MouseLeftButtonDown"
+            PreviewMouseWheel="MasterBorder_PreviewMouseWheel">
+        <Grid>
+            <!-- 1. FULL EXPANDED VIEW -->
+            <DockPanel x:Name="FullContentPanel" Visibility="{Binding IsFullViewVisible, Converter={StaticResource BoolToVis}}">
+                <!-- 1. Header (Time, Game Mode & Uptime) pinned at the top -->
+                <widgets:HeaderWidget DockPanel.Dock="Top" Visibility="{Binding IsHeaderVisible, Converter={StaticResource BoolToVis}}" Margin="0,0,0,8" />
+
+                <!-- Scrollable Body with smooth modern scrollbar -->
+                <ScrollViewer x:Name="MainScrollViewer"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False">
+                    <StackPanel Margin="0,0,2,0">
+                        <!-- 2. Weather Details Card -->
+                        <widgets:WeatherWidget Visibility="{Binding IsWeatherVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 3. System Telemetry -->
+                        <widgets:TelemetryWidget Visibility="{Binding IsTelemetryVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 4. Market Finance -->
+                        <widgets:FinanceWidget Visibility="{Binding IsFinanceVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 5. Media Controller -->
+                        <widgets:MediaWidget x:Name="MediaControlWidget" Visibility="{Binding IsMediaVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 6. Clipboard History -->
+                        <widgets:ClipboardWidget x:Name="ClipboardControlWidget" Visibility="{Binding IsClipboardVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 7. Hardware Components -->
+                        <widgets:HardwareWidget Visibility="{Binding IsHardwareVisible, Converter={StaticResource BoolToVis}}" />
+
+                        <!-- 8. Quick Actions Toolbar -->
+                        <widgets:QuickActionsWidget Visibility="{Binding IsQuickActionsVisible, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- 2. COMPACT MINI HUD BAR -->
+            <DockPanel x:Name="CompactHudPanel" Visibility="{Binding IsCompactViewVisible, Converter={StaticResource BoolToVis}}" Height="24">
+                <!-- Weather on Left -->
+                <TextBlock Text="{Binding Finance.WeatherText}"
+                           FontSize="11"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"
+                           DockPanel.Dock="Left"
+                           Margin="0,0,8,0" />
+
+                <!-- Expand Toggle Button on Right -->
+                <Button DockPanel.Dock="Right"
+                        Width="22" Height="22"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="BtnToggleCompact_Click"
+                        ToolTip="Genişlet">
+                    <Path Data="{StaticResource GeoCollapse}"
+                          Fill="{StaticResource TextSecondaryBrush}"
+                          Stretch="Uniform" Width="9" Height="9" />
+                </Button>
+
+                <!-- Mini Telemetry Badges (CPU • GPU • RAM) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
+                    <Border Background="#2400C2C7" CornerRadius="4" Padding="5,1.5" Margin="2,0">
+                        <TextBlock Text="{Binding CompactCpuText}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                    </Border>
+                    <Border Background="#1A34D399" CornerRadius="4" Padding="5,1.5" Margin="2,0">
+                        <TextBlock Text="{Binding CompactGpuText}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentGreenBrush}" />
+                    </Border>
+                    <Border Background="#1AFBBF24" CornerRadius="4" Padding="5,1.5" Margin="2,0">
+                        <TextBlock Text="{Binding CompactRamText}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentAmberBrush}" />
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Grid>
+    </Border>
+</Window>
