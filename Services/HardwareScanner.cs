@@ -43,10 +43,10 @@ public class HardwareScanner
         if (_config.HardwareVisibility.Peripherals)
         {
             specs.Peripherals.Add(GetMonitorItem());
-            specs.Peripherals.Add(GetKeyboardItem());
-            specs.Peripherals.Add(GetMouseItem());
-            specs.Peripherals.Add(GetHeadsetItem());
-            specs.Peripherals.Add(GetMicrophoneItem());
+            if (!string.IsNullOrWhiteSpace(_config.Peripherals.Keyboard)) specs.Peripherals.Add(GetKeyboardItem());
+            if (!string.IsNullOrWhiteSpace(_config.Peripherals.Mouse)) specs.Peripherals.Add(GetMouseItem());
+            if (!string.IsNullOrWhiteSpace(_config.Peripherals.Headset)) specs.Peripherals.Add(GetHeadsetItem());
+            if (!string.IsNullOrWhiteSpace(_config.Peripherals.Microphone)) specs.Peripherals.Add(GetMicrophoneItem());
         }
 
         // Manually described components are shown only when actually configured.
@@ -161,22 +161,17 @@ public class HardwareScanner
             using var searcher = new ManagementObjectSearcher("SELECT Name, NumberOfCores, NumberOfLogicalProcessors FROM Win32_Processor");
             foreach (ManagementObject obj in searcher.Get())
             {
-                var rawName = obj["Name"]?.ToString()?.Trim() ?? "AMD Ryzen 7 5700X";
-                var cleanName = rawName
-                    .Replace(" 8-Core Processor", "")
-                    .Replace(" 6-Core Processor", "")
-                    .Replace(" 12-Core Processor", "")
-                    .Replace(" 16-Core Processor", "")
-                    .Trim();
-
-                var cores = obj["NumberOfCores"]?.ToString() ?? "8";
-                var threads = obj["NumberOfLogicalProcessors"]?.ToString() ?? "16";
-
-                return new HardwareItem("Sistem", "IconCpu", "İşlemci", cleanName, $"{cores} Çekirdek • {threads} İzlek (AM4)", _priceService.GetPriceFormatted("cpu"), "https://www.amazon.com.tr/dp/B09VCHR1VH", "amazon.com.tr ↗");
+                var name = obj["Name"]?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                var cores = obj["NumberOfCores"]?.ToString() ?? "?";
+                var threads = obj["NumberOfLogicalProcessors"]?.ToString() ?? "?";
+                return new HardwareItem("Sistem", "IconCpu", "İşlemci", name,
+                    $"{cores} Çekirdek • {threads} İzlek", _priceService.GetPriceFormatted("cpu"));
             }
         }
         catch { }
-        return new HardwareItem("Sistem", "IconCpu", "İşlemci", "AMD Ryzen 7 5700X", "8 Çekirdek • 16 İzlek (AM4)", _priceService.GetPriceFormatted("cpu"), "https://www.amazon.com.tr/dp/B09VCHR1VH", "amazon.com.tr ↗");
+        return new HardwareItem("Sistem", "IconCpu", "İşlemci", "Algılanamadı",
+            "WMI verisi alınamadı", _priceService.GetPriceFormatted("cpu"));
     }
 
     private HardwareItem GetGpuItem()
@@ -235,7 +230,7 @@ public class HardwareScanner
         }
         catch { }
 
-        return new HardwareItem("Sistem", "IconGpu", "Ekran Kartı", "Harici Ekran Kartı", "GPU", _priceService.GetPriceFormatted("gpu"));
+        return new HardwareItem("Sistem", "IconGpu", "Ekran Kartı", "Algılanamadı", "WMI verisi alınamadı", _priceService.GetPriceFormatted("gpu"));
     }
 
     private HardwareItem GetMotherboardItem()
@@ -252,7 +247,7 @@ public class HardwareScanner
                 if (mfg.Contains("ASUSTeK", StringComparison.OrdinalIgnoreCase)) mfg = "ASUS";
 
                 var full = string.IsNullOrEmpty(mfg) ? prod : $"{mfg} {prod}";
-                full = full.Replace(" (MS-7C95)", "").Trim();
+                full = full.Trim();
 
                 return new HardwareItem("Sistem", "IconMotherboard", "Anakart", full, "Anakart", _priceService.GetPriceFormatted("motherboard"));
             }
@@ -300,7 +295,7 @@ public class HardwareScanner
         }
         catch { }
 
-        return new HardwareItem("Sistem", "IconRam", "RAM", "32 GB RAM", "DDR4", _priceService.GetPriceFormatted("ram"));
+        return new HardwareItem("Sistem", "IconRam", "RAM", "Algılanamadı", "WMI verisi alınamadı", _priceService.GetPriceFormatted("ram"));
     }
 
     private List<HardwareItem> GetStorageItems()
@@ -311,44 +306,27 @@ public class HardwareScanner
             using var searcher = new ManagementObjectSearcher("SELECT Model, Size, MediaType FROM Win32_DiskDrive");
             foreach (ManagementObject obj in searcher.Get())
             {
-                var model = obj["Model"]?.ToString()?.Trim() ?? "Disk";
-
-                if (model.Contains("SNV2S1000G", StringComparison.OrdinalIgnoreCase))
-                {
-                    items.Add(new HardwareItem(
-                        Category: "Depolama",
-                        IconKey: "IconStorage",
-                        Label: "SSD",
-                        Value: "Kingston NV2 (SNV2S1000G)",
-                        SubValue: "1 TB PCIe 4.0 NVMe M.2",
-                        PriceFormatted: _priceService.GetPriceFormatted("ssd_nvme"),
-                        Url: "https://www.amazon.com.tr/dp/B0BBWJH1HG",
-                        LinkDisplay: "amazon.com.tr ↗"
-                    ));
-                }
-                else if (model.StartsWith("SSD", StringComparison.OrdinalIgnoreCase) || model.Contains("512GB", StringComparison.OrdinalIgnoreCase))
-                {
-                    items.Add(new HardwareItem(
-                        Category: "Depolama",
-                        IconKey: "IconStorage",
-                        Label: "SSD",
-                        Value: model,
-                        SubValue: "SATA SSD",
-                        PriceFormatted: _priceService.GetPriceFormatted("ssd_sata"),
-                        Url: "https://www.amazon.com.tr/",
-                        LinkDisplay: "amazon.com.tr ↗"
-                    ));
-                }
+                var model = obj["Model"]?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(model)) continue;
+                var mediaType = obj["MediaType"]?.ToString()?.Trim() ?? "Disk";
+                string capacity = "";
+                if (ulong.TryParse(obj["Size"]?.ToString(), out var bytes) && bytes > 0)
+                    capacity = $"{(double)bytes / 1_000_000_000:F0} GB";
+                var isSsd = model.Contains("SSD", StringComparison.OrdinalIgnoreCase)
+                    || model.Contains("NVMe", StringComparison.OrdinalIgnoreCase)
+                    || mediaType.Contains("SSD", StringComparison.OrdinalIgnoreCase);
+                var label = isSsd ? "SSD" : "Disk";
+                var priceKey = isSsd ? "ssd_nvme" : "ssd_sata";
+                items.Add(new HardwareItem("Depolama", "IconStorage", label,
+                    model, string.IsNullOrEmpty(capacity) ? mediaType : $"{capacity} • {mediaType}",
+                    _priceService.GetPriceFormatted(priceKey)));
             }
         }
         catch { }
 
         if (items.Count == 0)
-        {
-            items.Add(new HardwareItem("Depolama", "IconStorage", "SSD", "Kingston NV2 (SNV2S1000G)", "1 TB PCIe 4.0 NVMe M.2", _priceService.GetPriceFormatted("ssd_nvme"), "https://www.amazon.com.tr/dp/B0BBWJH1HG", "amazon.com.tr ↗"));
-            items.Add(new HardwareItem("Depolama", "IconStorage", "SSD", "SATA SSD", "Model algılanamadı", _priceService.GetPriceFormatted("ssd_sata"), "https://www.amazon.com.tr/", "amazon.com.tr ↗"));
-        }
-
+            items.Add(new HardwareItem("Depolama", "IconStorage", "Disk",
+                "Algılanamadı", "WMI verisi alınamadı", _priceService.GetPriceFormatted("ssd_sata")));
         return items;
     }
 
@@ -356,7 +334,7 @@ public class HardwareScanner
     {
         if (!string.IsNullOrEmpty(_config.Peripherals.Monitor))
         {
-            return new HardwareItem("Çevre Birimleri", "IconMonitor", "Monitör", _config.Peripherals.Monitor, "27\" 180Hz 1440p QHD", _priceService.GetPriceFormatted("monitor"), "https://www.amazon.com.tr/dp/B0CYZ2B3D8", "amazon.com.tr ↗");
+            return new HardwareItem("Çevre Birimleri", "IconMonitor", "Monitör", _config.Peripherals.Monitor, "Kullanıcı tanımlı", _priceService.GetPriceFormatted("monitor"));
         }
 
         int resX = (int)SystemParameters.PrimaryScreenWidth;
@@ -384,27 +362,24 @@ public class HardwareScanner
         return new HardwareItem("Çevre Birimleri", "IconMonitor", "Monitör", "Birincil Ekran", resText, _priceService.GetPriceFormatted("monitor"));
     }
 
-    private HardwareItem GetKeyboardItem()
-    {
-        var name = _config.Peripherals.Keyboard ?? "Corsair K55 RGB PRO XT";
-        return new HardwareItem("Çevre Birimleri", "IconKeyboard", "Klavye", name, "Per-Key RGB Gaming", _priceService.GetPriceFormatted("keyboard"), "https://www.amazon.com.tr/dp/B08YC76FRP", "amazon.com.tr ↗");
-    }
+    private HardwareItem GetKeyboardItem() =>
+        new("Çevre Birimleri", "IconKeyboard", "Klavye",
+            _config.Peripherals.Keyboard ?? "Tanımlanmadı", "Kullanıcı tanımlı",
+            _priceService.GetPriceFormatted("keyboard"));
 
-    private HardwareItem GetMouseItem()
-    {
-        var name = _config.Peripherals.Mouse ?? "ROG Harpe Ace Aim Lab";
-        return new HardwareItem("Çevre Birimleri", "IconMouse", "Fare", name, "Ultralight 54g Wireless", _priceService.GetPriceFormatted("mouse"), "https://www.amazon.com.tr/dp/B0BQ7D9B4Y", "amazon.com.tr ↗");
-    }
+    private HardwareItem GetMouseItem() =>
+        new("Çevre Birimleri", "IconMouse", "Fare",
+            _config.Peripherals.Mouse ?? "Tanımlanmadı", "Kullanıcı tanımlı",
+            _priceService.GetPriceFormatted("mouse"));
 
-    private HardwareItem GetHeadsetItem()
-    {
-        var name = _config.Peripherals.Headset ?? "Razer Kraken Kitty V2 BT";
-        return new HardwareItem("Çevre Birimleri", "IconHeadset", "Kulaklık", name, "Bluetooth 5.2 • 7.1 Surround", _priceService.GetPriceFormatted("headset"), "https://www.amazon.com.tr/dp/B0CC9584V9", "amazon.com.tr ↗");
-    }
+    private HardwareItem GetHeadsetItem() =>
+        new("Çevre Birimleri", "IconHeadset", "Kulaklık",
+            _config.Peripherals.Headset ?? "Tanımlanmadı", "Kullanıcı tanımlı",
+            _priceService.GetPriceFormatted("headset"));
 
-    private HardwareItem GetMicrophoneItem()
-    {
-        var name = _config.Peripherals.Microphone ?? "Razer Seiren V3 Chroma";
-        return new HardwareItem("Çevre Birimleri", "IconMic", "Mikrofon", name, "USB Kondenser & Chroma RGB", _priceService.GetPriceFormatted("microphone"), "https://www.amazon.com.tr/dp/B0CRH7Q3L1", "amazon.com.tr ↗");
-    }
+    private HardwareItem GetMicrophoneItem() =>
+        new("Çevre Birimleri", "IconMic", "Mikrofon",
+            _config.Peripherals.Microphone ?? "Tanımlanmadı", "Kullanıcı tanımlı",
+            _priceService.GetPriceFormatted("microphone"));
+
 }
